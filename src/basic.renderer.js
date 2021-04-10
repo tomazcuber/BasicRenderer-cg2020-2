@@ -26,6 +26,33 @@
 
     Object.assign( Screen.prototype, {
 
+            boundingBox: function(primitive) {
+                let bbmin = [Infinity, Infinity];
+                let bbmax = [-Infinity, -Infinity];
+                for(var vertice of primitive.vertices){
+                    if(vertice[0] < bbmin[0]) bbmin[0] = vertice[0];
+                    if(vertice[1] < bbmin[1]) bbmin[1] = vertice[1];
+                    if(vertice[0] > bbmax[0]) bbmax[0] = vertice[0];
+                    if(vertice[1] > bbmax[1]) bbmax[1] = vertice[1];
+                }
+
+                return [bbmin, bbmax];
+            },
+
+            applyXForm: function(vertice, index, vertices){
+                console.log("Applying xform: ", this, "to vertice: " + vertice);
+                let vertice3 = [vertice[0], vertice[1], 1];
+                let transformedVertice = [0,0,0];
+                for(var i = 0; i < this.length; i++){
+                    let row = this[i];
+                    for(var j = 0; j < row.length; j++){
+                        transformedVertice[i] += row[j] * vertice3[j];
+                    }
+                }
+                console.log("Vertice: ", vertice, "transformed to: ", transformedVertice);
+                vertices[index] = [transformedVertice[0], transformedVertice[1]];
+            },
+
             preprocess: function(scene) {
                 // Possible preprocessing with scene primitives, for now we don't change anything
                 // You may define bounding boxes, convert shapes, etc
@@ -34,7 +61,16 @@
 
                 for( var primitive of scene ) {  
                     // do some processing
-                    // for now, only copies each primitive to a new list
+                    if(primitive.hasOwnProperty("xform")){
+                       primitive.vertices.forEach(this.applyXForm, primitive.xform);
+                       console.log("Vertices are now: ", primitive.vertices);
+                    }
+                    
+ 
+                    let BoundingBox = this.boundingBox(primitive)
+                    console.log("Generated Bounding Box:\n\tBB_min: " + BoundingBox[0] + "\n\tBB_max: " + BoundingBox[1] + "\n");
+                    
+                    
 
                     preprop_scene.push( primitive );
                     
