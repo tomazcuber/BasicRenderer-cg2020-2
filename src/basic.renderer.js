@@ -26,7 +26,7 @@
 
     Object.assign( Screen.prototype, {
 
-            boundingBox: function(primitive) {
+            boundingbox: function(primitive) {
                 let bbmin = [Infinity, Infinity];
                 let bbmax = [-Infinity, -Infinity];
                 for(var vertice of primitive.vertices){
@@ -66,10 +66,9 @@
                        console.log("Vertices are now: ", primitive.vertices);
                     }
                     
- 
-                    let BoundingBox = this.boundingBox(primitive)
-                    console.log("Generated Bounding Box:\n\tBB_min: " + BoundingBox[0] + "\n\tBB_max: " + BoundingBox[1] + "\n");
-                    
+                    let boundingbox = this.boundingbox(primitive)
+                    console.log("Generated Bounding Box:\n\tBB_min: " + boundingbox[0] + "\n\tBB_max: " + boundingbox[1] + "\n");
+                    primitive.boundingbox = boundingbox;
                     
 
                     preprop_scene.push( primitive );
@@ -92,9 +91,11 @@
 
                     // Loop through all pixels
                     // Use bounding boxes in order to speed up this loop
-                    for (var i = 0; i < this.width; i++) {
+                    let boundingBoxMin = primitive.boundingbox[0];
+                    let boundingBoxMax = primitive.boundingbox[1];
+                    for (var i = boundingBoxMin[0]; i < boundingBoxMax[0]; i++) {
                         var x = i + 0.5;
-                        for( var j = 0; j < this.height; j++) {
+                        for( var j = boundingBoxMin[1]; j < boundingBoxMax[1]; j++) {
                             var y = j + 0.5;
 
                             // First, we check if the pixel center is inside the primitive 
