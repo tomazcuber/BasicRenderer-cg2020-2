@@ -10,7 +10,7 @@
 
         
     function inside(  x, y, primitive  ) {
-            // You should implement your inside test here for all shapes   
+            // Teste de interseção entre ponto (dado pelas coordenadas x e y) e triângulo (dado por sua lista de vértices) utilizando o produto vetorial.
 
             let isInside = false;
             for(let i = 0; i < primitive.vertices.length; i++) {
@@ -43,19 +43,18 @@
     Object.assign( Screen.prototype, {
 
             boundingbox: function(primitive) {
+                // Gera uma Bounding Box usando os maiores e menores valores dos vértices do triângulo passado como argumento
+
                 let bbmin = [Infinity, Infinity];
                 let bbmax = [-Infinity, -Infinity];
-                // if(primitive.shape != "circle"){
-                    for(var vertice of primitive.vertices){
-                        if(vertice[0] < bbmin[0]) bbmin[0] = vertice[0];
-                        if(vertice[1] < bbmin[1]) bbmin[1] = vertice[1];
-                        if(vertice[0] > bbmax[0]) bbmax[0] = vertice[0];
-                        if(vertice[1] > bbmax[1]) bbmax[1] = vertice[1];
-                    }
-                // } else {
-                    // bbmin = primitive.center.map((value) => {return value - primitive.radius});
-                    // bbmax = primitive.center.map((value) => {return value + primitive.radius});
-                // }
+                
+                for(var vertice of primitive.vertices){
+                    if(vertice[0] < bbmin[0]) bbmin[0] = vertice[0];
+                    if(vertice[1] < bbmin[1]) bbmin[1] = vertice[1];
+                    if(vertice[0] > bbmax[0]) bbmax[0] = vertice[0];
+                    if(vertice[1] > bbmax[1]) bbmax[1] = vertice[1];
+                }
+                
                 bbmin[0] = Math.floor(Math.min(bbmin[0], vertice[0]));
                 bbmin[1] = Math.floor(Math.min(bbmin[1], vertice[1]));
                 bbmax[0] = Math.ceil(Math.max(bbmax[0], vertice[0]));
@@ -64,7 +63,8 @@
             },
 
             applyXForm: function(vertice, index, vertices){
-                console.log("Applying xform: ", this, "to vertice: " + vertice);
+                // Aplica uma transformação afim em cada vértice da primitiva. Deve ser usada como callback de forEach no array de vértices da primitiva.
+
                 let vertice3 = [vertice[0], vertice[1], 1];
                 let transformedVertice = [0,0,0];
                 for(var i = 0; i < this.length; i++){
@@ -73,11 +73,13 @@
                         transformedVertice[i] += row[j] * vertice3[j];
                     }
                 }
-                console.log("Vertice: ", vertice, "transformed to: ", transformedVertice);
+                
                 vertices[index] = [transformedVertice[0], transformedVertice[1]];
             },
 
             circleTriangulation: function(circle, nVertices){
+                // Realiza a triangulação do círculo gerando um número nVertices de pontos a partir da equação paramétrica.
+
                 let generatedVertices = [];
                 let angle = (2 * Math.PI) / nVertices;
                 for(let i = 0; i < nVertices; i++){
@@ -99,11 +101,11 @@
                     }
                     
                 };
+
                 for(let i = 0; i < generatedVertices.length; i++){
                     console.log("Triangle ", i, " = [(", circle.center, ", ", generatedVertices[(i % nVertices)], ", ", generatedVertices[((i + 1) % nVertices)], ")" )
                     let triangle = new Triangle([circle.center, generatedVertices[(i % nVertices)], generatedVertices[((i + 1) % nVertices)]]);
                     generatedTriangles.push(triangle)
-                    console.log(triangle)
                 }
                 
                 return generatedTriangles;
@@ -111,6 +113,8 @@
             },
 
             fanTriangulation(polygon){
+                // Realiza triangulação do polígono convexo a partir do algoritmo de fan triangulation partindo do primeiro ponto no array de vértices do polígono
+
                 let generatedTriangles = [];
                 const Triangle = class {
                     constructor(vertices){
@@ -127,20 +131,19 @@
                 for(let i = 1; i < nVertices - 1; i++){
                     let triangle = new Triangle([polygon.vertices[0], polygon.vertices[i % nVertices], polygon.vertices[(i+1) % nVertices]]);
                     generatedTriangles.push(triangle);
-                    //console.log(triangle);
+                    
                 }
-                //console.log(generatedTriangles)
+                
                 return generatedTriangles;
             },
 
             preprocess: function(scene) {
-                // Possible preprocessing with scene primitives, for now we don't change anything
-                // You may define bounding boxes, convert shapes, etc
+                
                 
                 var preprop_scene = [];
 
                 for( var primitive of scene ) { 
-                    //console.log(primitive) 
+                    // No loop de pré-processamento triangulariza cada uma das primitivas da cena e adiciona os triângulos resultantes na cena
                     
                     if(primitive.shape == "circle"){
                         let circleTriangles = this.circleTriangulation(primitive, 30);
@@ -155,16 +158,18 @@
                         for(var triangle of polygonTriangles){
                             scene.push(triangle);
                         }
-                        //scene.pop();
+                        
                         continue;
                     }
+
+                    // Em seguida é aplicada a transformação afim nos vértices da primitiva ponto-a-ponto
                     
                     
                     if(primitive.hasOwnProperty("xform")){
                        primitive.vertices.forEach(this.applyXForm, primitive.xform);
                     }
 
-                    
+                    // Por fim é gerada uma bounding box da primitiva para ser usada durante a etapa de rasterização
                     
                     let boundingbox = this.boundingbox(primitive)
                     primitive.boundingbox = boundingbox;
@@ -186,11 +191,10 @@
             rasterize: function() {
                 var color;
          
-                // In this loop, the image attribute must be updated after the rasterization procedure.
+                
                 for( var primitive of this.scene ) {
-
-                    // Loop through all pixels
-                    // Use bounding boxes in order to speed up this loop
+                   
+                    // A bounding box é usada para limitar a área percorrida para rasterizar cada primitiva
                     let boundingBoxMin = primitive.boundingbox[0];
                     let boundingBoxMax = primitive.boundingbox[1];
                     for (var i = boundingBoxMin[0]; i < boundingBoxMax[0]; i++) {
@@ -198,9 +202,9 @@
                         for( var j = boundingBoxMin[1]; j < boundingBoxMax[1]; j++) {
                             var y = j + 0.5;
 
-                            // First, we check if the pixel center is inside the primitive 
+                            
                             if ( inside( x, y, primitive ) ) {
-                                // only solid colors for now
+                                
                                 color = nj.array(primitive.color);
                                 this.set_pixel( i, this.height - (j + 1), color );
                             }
